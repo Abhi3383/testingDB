@@ -6,17 +6,24 @@ pool:
 
 stages:
 - stage: PublishArtifacts
-  displayName: 'Publish Build Artifacts'
-  dependsOn: PythonSetup
+  displayName: 'Build Stage-Notebooks'
   jobs:
   - job: PublishJob
-    displayName: 'Publish Build Artifact'
+    displayName: 'Publish Notebooks Folder'
     steps:
-    - task: PublishBuildArtifacts@1
-      displayName: 'Publish Artifact: notebooks-legacy'
+    - task: CopyFiles@2
+      displayName: 'Copy notebooks folder to Artifact Staging Directory'
       inputs:
-        PathtoPublish: '$(System.DefaultWorkingDirectory)'
-        ArtifactName: 'notebooks-legacy'
+        SourceFolder: '$(System.DefaultWorkingDirectory)'  # Root directory of the repo
+        Contents: 'Notebook/**'  # Include only the notebooks folder and its contents
+        TargetFolder: '$(Build.ArtifactStagingDirectory)'  # Destination directory 
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact: Legacy-notebook'
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: 'Legacy-notebook'
+
 
 
 
@@ -33,7 +40,7 @@ echo azure_client_secret= >> ~/.databrickscfg
 echo jobs-api-version=2.1 >> ~/.databrickscfg
 
 # Navigate to the directory containing the artifact
-cd "_databricksNotebook-CI/drop/Notebook"
+cd "_databricksNotebook-CI/Legacy-notebook/Notebook"
 pwd
 ls -la
 
