@@ -1,1 +1,48 @@
-Hello world
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  DATABRICKS_HOST: ''
+  # Set DATABRICKS_TOKEN as a secret variable in Azure DevOps for security
+  DATABRICKS_TOKEN: ''
+
+jobs:
+- job: BuildAndTest
+  displayName: 'Build and Test Python Package'
+  steps:
+
+  - script: |
+      curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
+    displayName: 'Install or Update Databricks CLI'
+
+  - script: |
+      databricks configure --token << EOF
+      $(DATABRICKS_HOST)
+      $(DATABRICKS_TOKEN)
+      EOF
+    displayName: 'Configure Databricks CLI with Token'
+
+  - script: |
+      mkdir -p $HOME/databricks_exports
+      databricks workspace list /
+      databricks workspace export-dir //Workspace/devToDev/ $HOME/databricks_exports
+    displayName: 'Export Databricks Workspace Directory'
+
+  - task: ArchiveFiles@2
+    inputs:
+      rootFolderOrFile: '$(HOME)/databricks_exports'
+      includeRootFolder: false
+      archiveType: 'zip'
+      archiveFile: '$(Pipeline.Workspace)/databricks_exports.zip'
+      replaceExistingArchive: true
+    displayName: 'Create Artifact from Exported Files'
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: '$(Pipeline.Workspace)'
+      ArtifactName: 'databricks_exports'
+      publishLocation: 'Container'
+    displayName: 'Publish Artifact'
