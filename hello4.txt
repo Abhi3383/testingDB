@@ -1,0 +1,64 @@
+trigger:
+- main
+
+pool:
+  name: 'demo-test-agent'  # Replace with your actual self-hosted pool name
+
+jobs:
+- job: BuildDatabricksBundle
+  displayName: 'Build Databricks Asset Bundle'
+  steps:
+  - checkout: self
+    displayName: 'Checkout Repository'
+
+  - task: PowerShell@2
+    inputs:
+      targetType: 'inline'
+      script: |
+        # Set Databricks host and token as environment variables
+        $env:DATABRICKS_HOST =
+        $env:DATABRICKS_TOKEN =
+
+        # Write the Databricks configuration to a file for non-interactive access
+        $configContent = @"
+        [DEFAULT]
+        host = $env:DATABRICKS_HOST
+        token = $env:DATABRICKS_TOKEN
+        "@
+
+        # Save the config to the .databrickscfg file
+        $configFilePath = "$env:USERPROFILE\.databrickscfg"
+        $configContent | Out-File -FilePath $configFilePath -Encoding UTF8
+
+        # Confirm that the Databricks CLI is configured
+        Write-Output "Databricks CLI configured successfully with token."
+
+        # List contents of the Databricks workspace for validation
+        databricks workspace list /Users/abhishek.gupta1@celebaltech.com
+        
+        # Navigate and validate the Python project bundle
+        Write-Output "Validating bundle_python_project..."
+        cd bundle_python_project
+        databricks bundle validate -t prod
+        cd ..
+
+        # Navigate and validate the SQL project bundle
+        Write-Output "Validating bundle_sql_project..."
+        cd bundle_sql_project
+        databricks bundle validate -t prod
+
+    displayName: 'Configure Databricks'
+
+  - task: PowerShell@2
+    inputs:
+      targetType: 'inline'
+      script: |
+        New-Item -Path $(Build.ArtifactStagingDirectory)\bundle -ItemType Directory
+        Copy-Item -Recurse -Path . -Destination $(Build.ArtifactStagingDirectory)\bundle
+    displayName: 'Copy Bundle to Artifact Staging Directory on Windows'
+
+  - task: PublishBuildArtifacts@1  # Correct task type for publishing artifacts
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)/bundle'
+      ArtifactName: 'databricks-python-bundle'
+    displayName: 'Publish Databricks Bundle as Artifact'
