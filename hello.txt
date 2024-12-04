@@ -3,12 +3,6 @@ trigger:
 
 pool:
   vmImage: 'ubuntu-latest'
-
-variables:
-  DATABRICKS_HOST: ''
-  # Set DATABRICKS_TOKEN as a secret variable in Azure DevOps for security
-  DATABRICKS_TOKEN: ''
-
 jobs:
 - job: BuildAndTest
   displayName: 'Build and Test Python Package'
