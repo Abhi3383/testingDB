@@ -3,38 +3,44 @@ trigger:
 
 pool:
   vmImage: 'ubuntu-latest'
+
+variables:
+  - name: host
+    value: 'https://adb-2279059197964904.4.azuredatabricks.net'
+  - group: spn-vars  # This fetches `token` and other variables from the group.
+
 jobs:
-- job: BuildAndTest
-  displayName: 'Build and Test Python Package'
+- job: BuildDatabricksBundle
+  displayName: 'Build Databricks Asset Bundle'
   steps:
+  - checkout: self
+    displayName: 'Checkout Repository'
 
   - script: |
       curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
     displayName: 'Install or Update Databricks CLI'
 
   - script: |
-      databricks configure --token << EOF
-      EOF
-    displayName: 'Configure Databricks CLI with Token'
+      echo [DEFAULT] > ~/.databrickscfg
+      echo host = $(host) >> ~/.databrickscfg
+      echo azure_tenant_id= $(tenantID) >> ~/.databrickscfg
+      echo azure_client_id= $(clientID) >> ~/.databrickscfg
+      echo azure_client_secret= $(clientSecret) >> ~/.databrickscfg
+      echo jobs-api-version=2.1 >> ~/.databrickscfg
+      cat ~/.databrickscfg
+    displayName: 'Configure Databricks CLI'
+    env:
+      DATABRICKS_HOST: $(host)
 
   - script: |
-      mkdir -p $HOME/databricks_exports
-      databricks workspace list /
-      databricks workspace export-dir //Workspace/devToDev/ $HOME/databricks_exports
-    displayName: 'Export Databricks Workspace Directory'
+        databricks workspace list /
+    displayName: 'Databricks configuration check'
 
-  - task: ArchiveFiles@2
-    inputs:
-      rootFolderOrFile: '$(HOME)/databricks_exports'
-      includeRootFolder: false
-      archiveType: 'zip'
-      archiveFile: '$(Pipeline.Workspace)/databricks_exports.zip'
-      replaceExistingArchive: true
-    displayName: 'Create Artifact from Exported Files'
+  - script: |
+      mkdir -p $(Build.ArtifactStagingDirectory)/bundle
+      cp -R . $(Build.ArtifactStagingDirectory)/bundle/
+    displayName: 'Copy Bundle to Artifact Staging Directory'
 
-  - task: PublishBuildArtifacts@1
-    inputs:
-      PathtoPublish: '$(Pipeline.Workspace)'
-      ArtifactName: 'databricks_exports'
-      publishLocation: 'Container'
-    displayName: 'Publish Artifact'
+  - publish: $(Build.ArtifactStagingDirectory)/bundle
+    artifact: databricks-python-bundle
+    displayName: 'Publish Databricks Bundle as Artifact'
