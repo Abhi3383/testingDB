@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# Download Databricks CLI
+curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | bash
+ 
+echo [DEFAULT] > ~/.databrickscfg
+echo host= >> ~/.databrickscfg
+echo azure_tenant_id= >> ~/.databrickscfg  # Correct Tenant ID
+echo azure_client_id= >> ~/.databrickscfg  # Correct Client ID
+echo azure_client_secret= >> ~/.databrickscfg
+echo jobs-api-version=2.1 >> ~/.databrickscfg
+
+# Navigate to the directory containing the artifact
+cd "_databricksNotebook-CI/drop/Notebook"
+pwd
+ls -la
+
+databricks workspace list //Workspace
+
+# List the directories inside "notebook" folder (assuming they are folders to be exported)
+for dir in */; do
+  if [ -d "$dir" ]; then
+    echo "Exporting directory: $dir"
+    # Import each directory into Databricks workspace
+    databricks workspace import-dir "$dir" "//Workspace/$(basename "$dir")" --overwrite
+  fi
+done
+
+# Verify the import into the Databricks workspace
+databricks workspace list "//Workspace"
