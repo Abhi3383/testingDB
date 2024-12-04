@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# Download Databricks CLI
+curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | bash
+
+# Set the authentication values
+# Configure Databricks CLI with token
+databricks configure --token <<EOF
+EOF
+
+# Navigate to the directory containing the artifact
+cd "_databricks_dev_to_prod_migration/databricks_exports"
+
+# Unzip the artifact (adjust filename if necessary)
+unzip databricks_exports.zip -d /tmp/databricks_exports
+
+# List files to ensure they were unzipped correctly
+ls -la /tmp/databricks_exports
+ 
+databricks workspace list //Workspace
+
+# Import directory into Databricks workspace
+databricks workspace import-dir "/tmp/databricks_exports" "//Workspace/devToDev"
+
+databricks workspace list //Workspace
