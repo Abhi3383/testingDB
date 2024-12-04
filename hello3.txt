@@ -13,10 +13,10 @@ stages:
     displayName: 'Publish Build Artifact'
     steps:
     - task: PublishBuildArtifacts@1
-      displayName: 'Publish Artifact: drop'
+      displayName: 'Publish Artifact: notebooks-legacy'
       inputs:
         PathtoPublish: '$(System.DefaultWorkingDirectory)'
-        ArtifactName: 'drop'
+        ArtifactName: 'notebooks-legacy'
 
 
 
