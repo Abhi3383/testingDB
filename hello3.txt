@@ -26,6 +26,19 @@ stages:
 
 
 
+# Set the URL for the installation script
+$scriptUrl = "https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh"
+
+# Set a local file path to save the script
+$scriptPath = ".\install.sh"
+
+# Download the install script
+Invoke-WebRequest -Uri $scriptUrl -OutFile $scriptPath
+
+# Use WSL or emulate bash to execute the script
+wsl bash $scriptPath
+
+
 
 # Download Databricks CLI
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh" -OutFile "install.sh"
