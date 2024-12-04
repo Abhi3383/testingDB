@@ -34,6 +34,7 @@ jobs:
 
   - script: |
         databricks workspace list /
+        databricks bundle validate
     displayName: 'Databricks configuration check'
 
   - script: |
