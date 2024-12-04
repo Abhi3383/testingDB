@@ -27,33 +27,36 @@ stages:
 
 
 
-#!/bin/bash
-
 # Download Databricks CLI
-curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | bash
- 
-echo [DEFAULT] > ~/.databrickscfg
-echo host= >> ~/.databrickscfg
-echo azure_tenant_id= >> ~/.databrickscfg  # Correct Tenant ID
-echo azure_client_id= >> ~/.databrickscfg  # Correct Client ID
-echo azure_client_secret= >> ~/.databrickscfg
-echo jobs-api-version=2.1 >> ~/.databrickscfg
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh" -OutFile "install.sh"
+bash install.sh
+
+# Create Databricks config file with necessary values
+$databricksConfigPath = "$env:USERPROFILE\.databrickscfg"
+@"
+[DEFAULT]
+host=
+azure_tenant_id=
+azure_client_id=
+azure_client_secret=
+jobs-api-version=2.1
+"@ | Set-Content -Path $databricksConfigPath
 
 # Navigate to the directory containing the artifact
-cd "_databricksNotebook-CI/Legacy-notebook/Notebook"
-pwd
-ls -la
+Set-Location -Path "_databricksNotebook-CI/drop/Notebook"
+Get-Location
+Get-ChildItem -Force
 
-databricks workspace list //Workspace
+# List workspaces in Databricks
+databricks workspace list "//Workspace"
 
-# List the directories inside "notebook" folder (assuming they are folders to be exported)
-for dir in */; do
-  if [ -d "$dir" ]; then
-    echo "Exporting directory: $dir"
+# List the directories inside the "notebook" folder (assuming they are folders to be exported)
+$directories = Get-ChildItem -Directory
+foreach ($dir in $directories) {
+    Write-Host "Exporting directory: $($dir.Name)"
     # Import each directory into Databricks workspace
-    databricks workspace import-dir "$dir" "//Workspace/$(basename "$dir")" --overwrite
-  fi
-done
+    databricks workspace import-dir "$($dir.FullName)" "//Workspace/$($dir.Name)" --overwrite
+}
 
 # Verify the import into the Databricks workspace
 databricks workspace list "//Workspace"
