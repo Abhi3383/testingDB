@@ -26,6 +26,30 @@ stages:
 
 
 
+# Check if Chocolatey is installed
+if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
+    Write-Output "Chocolatey is not installed. Installing Chocolatey..."
+
+    # Set execution policy to allow the script to run
+    Set-ExecutionPolicy Bypass -Scope Process -Force
+
+    # Install Chocolatey
+    Invoke-WebRequest https://community.chocolatey.org/install.ps1 -OutFile install.ps1
+    .\install.ps1
+
+    # Verify installation
+    if (Get-Command choco -ErrorAction SilentlyContinue) {
+        Write-Output "Chocolatey successfully installed."
+    } else {
+        Write-Error "Failed to install Chocolatey."
+        exit 1
+    }
+} else {
+    Write-Output "Chocolatey is already installed."
+}
+
+choco install databricks-cli
+
 # Set the URL for the installation script
 $scriptUrl = "https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh"
 
