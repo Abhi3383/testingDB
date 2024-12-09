@@ -1,64 +1,35 @@
-trigger:
-- main
+# Define the path for the temporary config file
+$tempConfigPath = "$HOME\temp_databrickscfg.txt"
 
-pool:
-  name: 'demo-test-agent'  # Replace with your actual self-hosted pool name
+# Create the temporary .databrickscfg file with the specified content
+@"
+[DEFAULT]
+host                         = 
+azure_tenant_id             = 
+azure_client_id             = 
+azure_client_secret         = 
+jobs-api-version            = 2.1
+"@ | Out-File -FilePath $tempConfigPath -Encoding utf8
 
-jobs:
-- job: BuildDatabricksBundle
-  displayName: 'Build Databricks Asset Bundle'
-  steps:
-  - checkout: self
-    displayName: 'Checkout Repository'
+# Define the destination path for .databrickscfg
+$databricksConfigPath = "$HOME\.databrickscfg"
 
-  - task: PowerShell@2
-    inputs:
-      targetType: 'inline'
-      script: |
-        # Set Databricks host and token as environment variables
-        $env:DATABRICKS_HOST =
-        $env:DATABRICKS_TOKEN =
+# Transfer the temporary file to .databrickscfg
+Move-Item -Path $tempConfigPath -Destination $databricksConfigPath -Force
 
-        # Write the Databricks configuration to a file for non-interactive access
-        $configContent = @"
-        [DEFAULT]
-        host = $env:DATABRICKS_HOST
-        token = $env:DATABRICKS_TOKEN
-        "@
+# Display message confirming file transfer
+Write-Host "Databricks configuration file transferred to: $databricksConfigPath"
 
-        # Save the config to the .databrickscfg file
-        $configFilePath = "$env:USERPROFILE\.databrickscfg"
-        $configContent | Out-File -FilePath $configFilePath -Encoding UTF8
 
-        # Confirm that the Databricks CLI is configured
-        Write-Output "Databricks CLI configured successfully with token."
 
-        # List contents of the Databricks workspace for validation
-        databricks workspace list /Users/abhishek.gupta1@celebaltech.com
-        
-        # Navigate and validate the Python project bundle
-        Write-Output "Validating bundle_python_project..."
-        cd bundle_python_project
-        databricks bundle validate -t prod
-        cd ..
+databricks workspace list /
+dir
+cd _Databricks_dab_SingleArtifact_SHAWindows/databricks-python-bundle/s/bundle_python_project
+dir
+pip install --upgrade pip 
+pip install -r requirements-dev.txt
+dir
+databricks bundle deploy -t prod
 
-        # Navigate and validate the SQL project bundle
-        Write-Output "Validating bundle_sql_project..."
-        cd bundle_sql_project
-        databricks bundle validate -t prod
-
-    displayName: 'Configure Databricks'
-
-  - task: PowerShell@2
-    inputs:
-      targetType: 'inline'
-      script: |
-        New-Item -Path $(Build.ArtifactStagingDirectory)\bundle -ItemType Directory
-        Copy-Item -Recurse -Path . -Destination $(Build.ArtifactStagingDirectory)\bundle
-    displayName: 'Copy Bundle to Artifact Staging Directory on Windows'
-
-  - task: PublishBuildArtifacts@1  # Correct task type for publishing artifacts
-    inputs:
-      PathtoPublish: '$(Build.ArtifactStagingDirectory)/bundle'
-      ArtifactName: 'databricks-python-bundle'
-    displayName: 'Publish Databricks Bundle as Artifact'
+$terraformPath = ".databricks/bundle/prod/bin/terraform"
+icacls $terraformPath /grant Everyone:F
