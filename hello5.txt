@@ -82,23 +82,19 @@ databricks bundle deploy -t test
             $updated_content = $yaml_content `
                 -replace '(?<=- name:\sCatalog\s+default:\s).*', "`"$catalog_name`""  # New replacement for Catalog
 
-foreach ($job_file in $job_files) {
-    # Path to the YAML file
-    $yaml_path = "_variabalize_json/databricks-python-bundle/my_project/resources/$job_file"
+# Variables
+$policy_id = "$(policy_id)"
+$quartz_cron_expression = "$(quartz_cron_expression)"
+$catalog_name = "$(catalog_name)" # New variable for Catalog replacement
 
-    # Check if the file exists
-    if (Test-Path -Path $yaml_path) {
-        # Read the original YAML
-        $yaml_content = Get-Content -Path $yaml_path -Raw # Read the file as a single string
+# Direct replacement in the YAML file
+(Get-Content -Path "_variabalize_json/databricks-python-bundle/my_project/resources/job_1.yml" -Raw) `
+    -replace 'dev_thermal', $catalog_name ` # Replace dev_thermal directly
+    -replace '\$\{\{ policy_id \}\}', $policy_id ` # Replace policy_id placeholder
+    -replace 'quartz_cron_expression:.*', "quartz_cron_expression: $quartz_cron_expression" | ` # Replace quartz_cron_expression directly
+    Set-Content -Path "_variabalize_json/databricks-python-bundle/my_project/resources/job_1.yml"
 
-        # Check for the block using regex
-        if ($yaml_content -match '(\- name:\sCatalog\s+default:\s+\S+)') {
-            Write-Host "Block found in file: $job_file"
-            Write-Host "Matched Block: $Matches[1]"
-        } else {
-            Write-Host "Block not found in file: $job_file"
-        }
-    } else {
-        Write-Host "File not found: $job_file"
-    }
-}
+# Verification
+Write-Host "Updated file: job_1.yml"
+Write-Host "===== AFTER CHANGES ====="
+Get-Content -Path "_variabalize_json/databricks-python-bundle/my_project/resources/job_1.yml" | Write-Host
