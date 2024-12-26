@@ -78,7 +78,9 @@ databricks bundle deploy -t test
         -replace '(?<=- name:\sCatalog\s+default:\s).*', "`"$catalog_name`""  # New replacement for Catalog
 
 
-
+            # Perform replacements
+            $updated_content = $yaml_content `
+                -replace '(?<=- name:\sCatalog\s+default:\s).*', "`"$catalog_name`""  # New replacement for Catalog
 
 foreach ($job_file in $job_files) {
     # Path to the YAML file
