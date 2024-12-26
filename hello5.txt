@@ -1,8 +1,7 @@
 # Variables from the variable group
 $jobs = "$(job)" # Simulating the variable containing job names
 $policy_id = "$(policy_id)"
-$quartz_cron_expression = "$(quartz_cron_expression)"
-
+$catalog_name = "$(catalog_name)" # New variable for Catalog
 # Split the jobs into an array
 $job_files = $jobs -split ',\s*'
 
@@ -19,7 +18,8 @@ foreach ($job_file in $job_files) {
         # Perform replacements
         $updated_content = $yaml_content `
             -replace '(?<=quartz_cron_expression:\s).*', "`"$quartz_cron_expression`"" `
-            -replace '(?<=policy_id:\s).*', "`"$policy_id`""
+            -replace '(?<=policy_id:\s).*', "`"$policy_id`"" `
+            -replace '(?<=- name: Catalog\s+default:\s).*', "`"$catalog_name`"" # New replacement for Catalog
 
         # Write the updated content back to the file
         $updated_content | Set-Content -Path $yaml_path
