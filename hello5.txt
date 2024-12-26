@@ -74,3 +74,24 @@ databricks bundle deploy -t test
         -replace '(?<=- name:\sCatalog\s+default:\s).*', "`"$catalog_name`"" # Updated regex for Catalog
         -replace '(^\s*- name:\sCatalog\s*default:\s*)(.+)', "`$1`"$catalog_name`"" `
         -replace '(\- name:\sCatalog\s+default:\s+).*', "`$1$catalog_name" # Updated regex for Catalog
+
+foreach ($job_file in $job_files) {
+    # Path to the YAML file
+    $yaml_path = "_variabalize_json/databricks-python-bundle/my_project/resources/$job_file"
+
+    # Check if the file exists
+    if (Test-Path -Path $yaml_path) {
+        # Read the original YAML
+        $yaml_content = Get-Content -Path $yaml_path -Raw # Read the file as a single string
+
+        # Check for the block using regex
+        if ($yaml_content -match '(\- name:\sCatalog\s+default:\s+\S+)') {
+            Write-Host "Block found in file: $job_file"
+            Write-Host "Matched Block: $Matches[1]"
+        } else {
+            Write-Host "Block not found in file: $job_file"
+        }
+    } else {
+        Write-Host "File not found: $job_file"
+    }
+}
