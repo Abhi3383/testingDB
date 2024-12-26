@@ -73,3 +73,4 @@ databricks bundle deploy -t test
         -replace '(?<=- name:\sCatalog\s+default:\s).*', "`"$catalog_name`"" `
         -replace '(?<=- name:\sCatalog\s+default:\s).*', "`"$catalog_name`"" # Updated regex for Catalog
         -replace '(^\s*- name:\sCatalog\s*default:\s*)(.+)', "`$1`"$catalog_name`"" `
+        -replace '(\- name:\sCatalog\s+default:\s+).*', "`$1$catalog_name" # Updated regex for Catalog
