@@ -75,6 +75,10 @@ databricks bundle deploy -t test
         -replace '(^\s*- name:\sCatalog\s*default:\s*)(.+)', "`$1`"$catalog_name`"" `
         -replace '(\- name:\sCatalog\s+default:\s+).*', "`$1$catalog_name" # Updated regex for Catalog
         -replace '(\- name:\sCatalog\s+default:\s+)\S+', "`$1$catalog_name"
+        -replace '(?<=- name:\sCatalog\s+default:\s).*', "`"$catalog_name`""  # New replacement for Catalog
+
+
+
 
 foreach ($job_file in $job_files) {
     # Path to the YAML file
