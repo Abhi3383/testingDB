@@ -1,0 +1,67 @@
+# Variables from the variable group
+$jobs = "$(job)" # Simulating the variable containing job names
+$policy_id = "$(policy_id)"
+$quartz_cron_expression = "$(quartz_cron_expression)"
+
+# Split the jobs into an array
+$job_files = $jobs -split ',\s*'
+
+# Iterate through each job file
+foreach ($job_file in $job_files) {
+    # Path to the YAML file
+    $yaml_path = "_variabalize_json/databricks-python-bundle/my_project/resources/$job_file"
+
+    # Check if the file exists
+    if (Test-Path -Path $yaml_path) {
+        # Read the original YAML
+        $yaml_content = Get-Content -Path $yaml_path
+
+        # Perform replacements
+        $updated_content = $yaml_content `
+            -replace '(?<=quartz_cron_expression:\s).*', "`"$quartz_cron_expression`"" `
+            -replace '(?<=policy_id:\s).*', "`"$policy_id`""
+
+        # Write the updated content back to the file
+        $updated_content | Set-Content -Path $yaml_path
+
+        # Display progress
+        Write-Host "Updated file: $job_file"
+        Write-Host "===== BEFORE CHANGES ====="
+        $yaml_content | Write-Host
+        Write-Host "===== AFTER CHANGES ====="
+        $updated_content | Write-Host
+    } else {
+        Write-Host "File not found: $job_file"
+    }
+}
+
+
+
+# Define Databricks host and token in the environment
+$env:DATABRICKS_HOST = 
+$env:DATABRICKS_TOKEN = 
+
+Write-Output "Configuring Databricks CLI..."
+$configContent = @"
+[DEFAULT]
+host = $env:DATABRICKS_HOST
+token = $env:DATABRICKS_TOKEN
+"@
+
+
+# Simulate interactive input for `databricks configure --token`
+$inputValues = "$DATABRICKS_HOST`n$DATABRICKS_TOKEN`n"
+
+# Use PowerShell to provide the input to the command
+$inputValues | databricks configure --token
+
+Write-Output "Databricks CLI configured successfully with token."
+
+databricks workspace list /
+
+
+databricks workspace list /
+dir
+cd _variabalize_json/databricks-python-bundle/my_project/
+dir
+databricks bundle deploy -t test
