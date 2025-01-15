@@ -1,0 +1,54 @@
+# Define reusable clusters
+new_cluster: &new_cluster
+  new_cluster:
+    num_workers: 3
+    spark_version: 15.3.x-cpu-ml-scala2.12
+    node_type_id: Standard_D3_v2
+    data_security_mode: "SINGLE_USER"
+    custom_tags:
+      clusterSource: mlops-stacks_0.4
+
+# Define permissions for different environments
+permissions_by_env:
+  dev:
+    permissions:
+      - level: CAN_RUN
+        group_name: dev_users
+      - level: CAN_VIEW
+        group_name: dev_viewers
+  test:
+    permissions:
+      - level: CAN_RUN
+        group_name: test_users
+      - level: CAN_VIEW
+        group_name: test_viewers
+  prod:
+    permissions:
+      - level: CAN_RUN
+        group_name: prod_users
+      - level: CAN_VIEW
+        group_name: prod_viewers
+
+resources:
+  jobs:
+    retraining_job:
+      name: ${bundle.target}-my_mlops_project-monitoring-retraining-job
+      tasks:
+        - task_key: monitored_metric_violation_check
+          <<: *new_cluster
+          notebook_task:
+            notebook_path: ../monitoring/notebooks/MonitoredMetricViolationCheck.py
+            base_parameters:
+              env: ${bundle.target}
+              table_name_under_monitor: ${bundle.target}.my_mlops_project.predictions
+              metric_to_monitor: root_mean_squared_error
+              metric_violation_threshold: 100
+              num_evaluation_windows: 5
+              num_violation_windows: 2
+              git_source_info: url:${bundle.git.origin_url}; branch:${bundle.git.branch}; commit:${bundle.git.commit}
+      permissions: ${permissions_by_env[${bundle.target}]}
+      schedule:
+        quartz_cron_expression: "0 0 18 * * ?" # daily at 6pm
+        timezone_id: UTC
+
+databricks asset deploy --target test
